@@ -13,16 +13,18 @@ class UrlShortcutFlowTest(APITestCase):
             "shortcuts:shortcut-detail", args=[code]
         )
         self.random_url = "https://www.youtube.com/"
-        self.random_code = "ABC123"
 
     def test_(self):
         # Create shortcut
         payload = {"target_url": self.random_url}
         response = self.client.post(self.create_endpoint_url, payload, format="json")
         shortcut_obj = UrlShortcut.objects.first()
+        self.assertIsNotNone(shortcut_obj, "Shortcut was not created in database")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        expected_path = reverse("shortcuts:shortcut-detail", args=[shortcut_obj.code])
+        expected_url = response.wsgi_request.build_absolute_uri(expected_path)
         self.assertEqual(
-            response.data, {"target_url": self.random_url, "code": shortcut_obj.code}
+            response.data, {"short_url": expected_url}
         )
 
         # Retrieve shortcut (redirect to URL works)
@@ -31,7 +33,6 @@ class UrlShortcutFlowTest(APITestCase):
         self.assertEqual(response.url, shortcut_obj.target_url)
 
         # Verify DB
-        self.assertIsNotNone(shortcut_obj, "Shortcut was not created in database")
         self.assertEqual(shortcut_obj.target_url, self.random_url)
         self.assertIsNotNone(shortcut_obj.code)
         self.assertEqual(len(shortcut_obj.code), CODE_SIZE)

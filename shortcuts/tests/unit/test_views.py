@@ -22,7 +22,7 @@ class UrlShortcutCreateViewTest(APITestCase):
         self.assertIsNone(UrlShortcut.objects.first())
         self.assertEqual(
             response.data,
-            {"target_url": [ErrorDetail(string="Enter a valid URL.", code="invalid")]},
+            {"target_url": [ErrorDetail(string="Wprowadź poprawny adres URL.", code="invalid")]},
         )
 
     @patch("shortcuts.models.generate_random_code")
@@ -39,8 +39,10 @@ class UrlShortcutCreateViewTest(APITestCase):
         self.assertIsNotNone(shortcut_obj.code)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        expected_path = reverse("shortcuts:shortcut-detail", args=[self.random_code])
+        expected_url = response.wsgi_request.build_absolute_uri(expected_path)
         self.assertEqual(
-            response.data, {"target_url": self.random_url, "code": shortcut_obj.code}
+            response.data, {"short_url": expected_url}
         )
 
 
